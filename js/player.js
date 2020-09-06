@@ -71,48 +71,18 @@ export default class Player {
 
         if(sprite.active) {
 
-            // toggle autoFire mode
-            if(Phaser.Input.Keyboard.JustDown(controls.keys.autofire)) {
-                if(sprite.autoFire) {
-                    sprite.autoFire = false;
-                } 
-                else {
-                    sprite.autoFire = true;
-                }
-            }
-
             // keyboard controls
-            // shooting
-            if (scene.controls.keys.space.isDown || sprite.autoFire) {
-                sprite.weapon.fire();
-            }
-            // thrust
             if (scene.controls.keys.up.isDown) {
-                sprite.emitter.on = true;
-                sprite.setDrag(0.98);
-                scene.physics.velocityFromAngle(sprite.angle, 350, sprite.body.acceleration);
-            } else {
-                sprite.emitter.on = false;
-                sprite.body.setAcceleration(0);
+                sprite.body.velocity.y = -100;
+            } else if (scene.controls.keys.down.isDown) {
+                sprite.body.velocity.y = 100;
             }
-            // brake
-            if ((scene.controls.keys.down.isDown)) {
-                sprite.setDrag(0.92);
-            }
-            // Left
+
+            
             if (scene.controls.keys.left.isDown) {
-                sprite.setAngularVelocity(-250);
-
-            }
-            // Right
-            else if (scene.controls.keys.right.isDown) {
-                sprite.setAngularVelocity(250);
-
-            }
-            // else no key press
-            else {
-                sprite.setAngularVelocity(0);
-
+                sprite.body.velocity.x = -100;
+            } else if (scene.controls.keys.right.isDown) {
+                sprite.body.velocity.x = 100;
             }
         }
 

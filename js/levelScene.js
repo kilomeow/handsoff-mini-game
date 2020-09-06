@@ -74,10 +74,7 @@ export default class levelScene extends Phaser.Scene {
         this.vm = new Vue({
             el: '#infoPanel',
             data: {
-                score: 0,
-                multiplier: 0,
-                lives: 3,
-                highScores: this.storage.fetch(),
+                burn: 0,
             },
             methods: {
                 // when the animation is complete, remove the css class
@@ -100,9 +97,7 @@ export default class levelScene extends Phaser.Scene {
                 down: 'DOWN',
                 left: 'LEFT',
                 right: 'RIGHT',
-                space: 'SPACE',
-                pause: 'P',
-                autofire: 'F'
+                pause: 'SPACE'
             }
         });
         this.controls.createWasdKeys();
@@ -114,10 +109,8 @@ export default class levelScene extends Phaser.Scene {
         // create player ship
         this.player = new Player(this, 320, 240);
 
-        // create scores/lives/multipliers
-        this.score = 0;
-        this.highScore = 0;
-        this.multiplier = 0;
+        // store burn level
+        this.burn = 0;
 
         // start spawning asteroids
         this.createTimer();
@@ -277,15 +270,9 @@ export default class levelScene extends Phaser.Scene {
                 this.cam.flash();
             }
 
-            // increase multplier if asteroidGroup children are a multiple of 5
-            if (this.asteroidGroup.getChildren().length % 5 === 0) {
-                this.multiplier++;
-                this.vm.multiplier = 'x' + this.multiplier;
-            }
-
             // the bigger the asteroid, the bigger the score
-            this.score += (asteroid.scaleX * 1000) * this.multiplier;
-            this.vm.score = this.numberCommas(this.score);
+            this.fire += (asteroid.scaleX * 1000);
+            this.vm.fire = this.numberCommas(this.fire);
 
             // destroy asteroid
             asteroid.destroy();
@@ -305,11 +292,9 @@ export default class levelScene extends Phaser.Scene {
             this.cam.shake(100, 0.01);
             this.explosionEmitter.setPosition(player.x, player.y);
             this.explosionEmitter.explode(75);
-            // lose a life and reset multipler, update vue
-            player.lives--;
-            this.vm.lives = player.lives;
-            this.multiplier = 0;
-            this.vm.multiplier = this.multiplier;
+            // update burn
+            this.burn += 10;
+            this.vm.burn = this.burn;
 
             // player flashes when hit
             player.hitTween.play();
@@ -318,63 +303,6 @@ export default class levelScene extends Phaser.Scene {
             this.asteroidGroup.children.each(function (asteroid) {
                 asteroid.destroy();
             });
-
-            // game over
-            if(player.lives <= 0) {
-                // set player to inactive, also disables player controls
-                player.setActive(false).setVisible(false);
-                player.emitter.on = false;
-                // start camera fade out
-                this.cam.fadeOut(3500, 255, 255, 255);
-
-                // destroy the timer and any asteroids that are active
-                this.spawnAsteroidsTimer.destroy();
-                this.asteroidGroup.children.each(function (asteroid) {
-                    asteroid.destroy();
-                });
-
-                // check to see if this score is higher than any current top 5 high score
-                const length = this.vm.highScores.length;
-                if(this.score > this.vm.highScores[length - 1].score) {
-                    // push score to vue highScores array to update dom
-                    const score = {
-                        value: this.numberCommas(this.score),
-                        multiplier: this.multiplier,
-                        score: this.score,
-                        newScore: true
-                    };
-                    this.vm.highScores.push(score);
-                    // sort the array with highest score first
-                    this.vm.highScores.sort(function (a, b) {
-                        return b.score - a.score;
-                    });
-                    // remove last score
-                    this.vm.highScores.pop();
-                    // save to localStorage
-                    this.storage.save(this.vm.highScores);
-
-
-                }
-                // reset scores and multiplers, update vue dom
-                this.score = 0;
-                this.vm.score = this.score;
-                this.multiplier = 0;
-                this.vm.multiplier = this.multiplier;
-
-                // restart game
-                this.time.addEvent({
-                    delay: 4000,
-                    callback: function () {
-                        // start timer, reset lives and player
-                        this.createTimer();
-                        player.lives = 3;
-                        this.vm.lives = player.lives;
-                        this.cam.fadeIn(1000, 255, 255, 255);
-                        player.setActive(true).setVisible(true);
-                    },
-                    callbackScope: this
-                });
-            }
         }
     }
 
